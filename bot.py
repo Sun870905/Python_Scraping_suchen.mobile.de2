@@ -24,7 +24,7 @@ class SuchenMobileDe():
         
     def __exWaitS(self):
         # Implicit waiting functions
-        return WebDriverWait(self.driver, 5)
+        return WebDriverWait(self.driver, 10)
         
     def _click(self, element, msg=" "):
         # This functions is to just click stuff
@@ -43,6 +43,15 @@ class SuchenMobileDe():
             self.site_url = "https://suchen.mobile.de/fahrzeuge/search.html?vc=Motorbike"
         self.driver.get(self.site_url)
         time.sleep(15)
+        try:
+            acceptBtn = self.__exWaitS().until(
+                ec.presence_of_element_located((By.ID, "mde-consent-accept-btn")),
+                message="timeout trying to find accept button",
+            )
+            acceptBtn.click()
+        except Exception as e:
+            print(e)
+            pass
         if price_from != -1:
             try:
                 minPrice = self.__exWaitS().until(
@@ -144,15 +153,6 @@ class SuchenMobileDe():
                 print(e)
                 pass
         try:
-            acceptBtn = self.__exWaitS().until(
-                ec.presence_of_element_located((By.ID, "mde-consent-accept-btn")),
-                message="timeout trying to find accept button",
-            )
-            acceptBtn.click()
-        except Exception as e:
-            print(e)
-            pass
-        try:
             searchBtn = self.__exWaitS().until(
                 ec.presence_of_element_located((By.ID, "dsp-upper-search-btn")),
                 message="timeout trying to find offer button",
@@ -165,42 +165,70 @@ class SuchenMobileDe():
             
     def start(self, minimal_photo_count=0):
         try:
-            item = self.__exWaitS().until(
-                ec.presence_of_element_located((By.CLASS_NAME, "cBox-body cBox-body--topResultitem dealerAd")),
-                message="timeout trying to find top result item",
+            icon = self.__exWaitS().until(
+                ec.presence_of_element_located((By.XPATH, "//div[@id='save-search-tutorial']/span")),
+                message="timeout trying to find icon",
             )
-            imageNum = item.findElementByXpath("./a/div[2]/div[1]/div[1]//b")
-            if int(imageNum) >= minimal_photo_count:
-                item.findElementByXpath("./a")
-                link_info = item.getAttribute("href")
-                self.scraping(link_info)
+            icon.click()
         except Exception as e:
             print(e)
             pass
-        try:
-            items = self.__exWaitS().until(
-                ec.presence_of_all_elements_located((By.ID, "cBox-body cBox-body--resultitem dealerAd")),
-                message="timeout trying to find items",
-            )
-            for item in items:
-                imageNum = item.findElementByXpath("./a/div[2]/div[1]/div[1]//b")
-                if int(imageNum) >= minimal_photo_count:
-                    item.findElementByXpath("./a")
-                    link_info = item.getAttribute("href")
+        while 1:
+            try:
+                topResult = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[1]/div[3]/div[4]/div[2]/div[2]/div[4]")),
+                    message="timeout trying to find top result item",
+                )
+                imageNum = topResult.find_elements_by_xpath("./a/div[2]/div[1]/div[1]/div//b")
+                image_count_item = imageNum[0]
+                if len(imageNum) > 1:
+                    image_count_item = imageNum[1]
+                print(f"-------------> {image_count_item.text}")
+                if int(image_count_item.text) >= minimal_photo_count:
+                    topResult_link = topResult.find_element_by_xpath("./a")
+                    link_info = topResult_link.get_attribute("href")
                     self.scraping(link_info)
-        except Exception as e:
-            print(e)
-            pass
+            except Exception as e:
+                print(e)
+                pass
+            try:
+                items = self.__exWaitS().until(
+                    ec.presence_of_all_elements_located((By.XPATH, "/html/body/div[4]/div[1]/div[3]/div[4]/div[2]/div[2]/div[@class='cBox-body cBox-body--resultitem dealerAd']")),
+                    message="timeout trying to find items",
+                )
+                for item in items:
+                    imageNum = item.find_element_by_xpath("./a/div/div[1]/div/div/span[2]/b")
+                    print(f"--------------> {imageNum.text}")
+                    if int(imageNum.text) >= minimal_photo_count:
+                        item_link = item.find_element_by_xpath("./a")
+                        link_info = item_link.get_attribute("href")
+                        self.scraping(link_info)
+            except Exception as e:
+                print(e)
+                pass
+            try:
+                page_forward_btn = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "page-forward")),
+                    message="timeout trying to find page forward button",
+                )
+                page_forward_btn.click()
+            except Exception as e:
+                print("-------------> Page Forward Button doesn't exist")
+                break
+        print("----------------> Scraping End")        
         
-    
     def scraping(self, link_url=""):
-        self.driver.find_element_by_tag_name('body').send_keys(Keys.COMMAND + 't')
-        self.driver.get(link_url)
-        time.sleep(100)
-        self.driver.find_element_by_tag_name('body').send_keys(Keys.COMMAND + 'w')
-            
-if __name__ == "__main__":
+        main_window= self.driver.current_window_handle
+        self.driver.execute_script('window.open(arguments[0]);', link_url)
+        self.driver.switch_to.window(self.driver.window_handles[1])
+        title = self.__exWaitS().until(
+            ec.presence_of_element_located((By.ID, "ad-title")),
+            message="timeout trying to find title",
+        ).text
+        self.driver.close()
+        self.driver.switch_to.window(main_window)
 
+if __name__ == "__main__":
     suchenMobileDe = SuchenMobileDe()
     suchenMobileDe.login()
     time.sleep(15)
