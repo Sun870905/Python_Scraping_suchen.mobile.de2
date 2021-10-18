@@ -1,5 +1,0 @@
-colorama
-selenium
-
-chromedriver 91.0.4472.19
-chrome 91.0.4472.77

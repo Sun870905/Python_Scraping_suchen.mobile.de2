@@ -6,39 +6,21 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
 
 from log import Log
 from xpath import *
 import pandas as pd
+import undetected_chromedriver.v2 as uc
 
-class Nextdoor():
+class SuchenMobileDe():
 
     def __init__(self):
-        self.user_mail = ""
-        self.user_pswd = ""
-        self.date = ""
-        self.time = ""
-        self.post_category =  ""
-        self.post_subject = ""
-        self.post_message = ""
-        self.read_csv()
         self.log = Log()
-        self.site_url = "https://nextdoor.com/"
-        self.newsfeed_url = "https://nextdoor.co.uk/news_feed/"
-        options = Options()
-        options.add_argument("--window-size=1920,1200")
-        self.driver = Chrome(options=options, executable_path="chromedriver.exe")
-        
-    def read_csv(self):
-        df = pd.read_csv("next_door.csv")
-        input_data = df.iloc[0, :].values.tolist()
-        self.user_mail = input_data[0]
-        self.user_pswd = input_data[1]
-        self.date = input_data[2]
-        self.time = input_data[3]
-        self.post_category = input_data[4]
-        self.post_subject = input_data[5]
-        self.post_message = input_data[6]
+        self.site_url = "https://suchen.mobile.de/fahrzeuge/search.html?dam=0"
+        chrome_options = Options()
+        chrome_options.add_argument("--start-maximized")
+        self.driver = Chrome(executable_path='chromedriver93.0.4577.15_win32.exe', options=chrome_options)
         
     def __exWaitS(self):
         # Implicit waiting functions
@@ -54,109 +36,172 @@ class Nextdoor():
         self.log.write_log("bot", msg)
         time.sleep(waitingTime)
     
-    def login(self):
+    def login(self, vehicle_type="cars", price_from=-1, price_to=-1, registration_from=-1, registration_to=-1, kilometer_from=-1, kilometer_to=-1, provider="any"):
+        if vehicle_type == "cars":
+            self.site_url = "https://suchen.mobile.de/fahrzeuge/search.html?dam=0"
+        elif vehicle_type == "motorcycles":
+            self.site_url = "https://suchen.mobile.de/fahrzeuge/search.html?vc=Motorbike"
+        self.driver.get(self.site_url)
+        time.sleep(15)
+        if price_from != -1:
+            try:
+                minPrice = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "minPrice")),
+                    message="timeout trying to find min price input",
+                )
+                minPrice.send_keys(price_from)
+            except Exception as e:
+                print(e)
+                pass
+        if price_to != -1:
+            try:
+                maxPrice = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "maxPrice")),
+                    message="timeout trying to find max price input",
+                )
+                maxPrice.send_keys(price_to)
+            except Exception as e:
+                print(e)
+                pass
+        if registration_from != -1:
+            try:
+                minFirstRegistrationDate = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "minFirstRegistrationDate")),
+                    message="timeout trying to find min registration input",
+                )
+                minFirstRegistrationDate.send_keys(registration_from)
+            except Exception as e:
+                print(e)
+                pass
+        if registration_to != -1:
+            try:
+                maxFirstRegistrationDate = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "maxFirstRegistrationDate")),
+                    message="timeout trying to find max registration input",
+                )
+                maxFirstRegistrationDate.send_keys(registration_to)
+            except Exception as e:
+                print(e)
+                pass
+        if kilometer_from != -1:
+            try:
+                minMileage = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "minMileage")),
+                    message="timeout trying to find min kilometer input",
+                )
+                minMileage.send_keys(kilometer_from)
+            except Exception as e:
+                print(e)
+                pass
+        if kilometer_to != -1:
+            try:
+                maxMileage = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "maxMileage")),
+                    message="timeout trying to find max kilometer input",
+                )
+                maxMileage.send_keys(kilometer_to)
+            except Exception as e:
+                print(e)
+                pass
+        if provider == "any":
+            try:
+                anyRadio = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "adLimitation--ds")),
+                    message="timeout trying to find any radio",
+                )
+                anyRadio.click()
+            except Exception as e:
+                print(e)
+                pass
+        if provider == "Private provider":
+            try:
+                private_provider_radio = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "adLimitation-ONLY_FSBO_ADS-ds")),
+                    message="timeout trying to find private provider radio",
+                )
+                private_provider_radio.click()
+            except Exception as e:
+                print(e)
+                pass
+        if provider == "Dealers":
+            try:
+                dealerRadio = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "adLimitation-ONLY_DEALER_ADS-ds")),
+                    message="timeout trying to find dealer radio",
+                )
+                dealerRadio.click()
+            except Exception as e:
+                print(e)
+                pass
+        if provider == "Company vehicles":
+            try:
+                company_vehicle_radio = self.__exWaitS().until(
+                    ec.presence_of_element_located((By.ID, "adLimitation-ONLY_COMMERCIAL_FSBO_ADS-ds")),
+                    message="timeout trying to find company vehicle radio",
+                )
+                company_vehicle_radio.click()
+            except Exception as e:
+                print(e)
+                pass
         try:
-            self.driver.get(self.site_url)
-            login_btn1 = self.__exWaitS().until(
-                ec.presence_of_element_located((By.XPATH, user["user-login-btn1"])),
-                message="timeout trying to find the login button on the nextdoor page",
+            acceptBtn = self.__exWaitS().until(
+                ec.presence_of_element_located((By.ID, "mde-consent-accept-btn")),
+                message="timeout trying to find accept button",
             )
-            self._click(login_btn1, "Click the login button on the nextdoor page")
-            
-            emailField = self.__exWaitS().until(
-                ec.presence_of_element_located(
-                    (By.XPATH, user["user-email-field"])
-                ),
-                message="timeout trying to find email field",
-            )
-            emailField.send_keys(self.user_mail)
-
-            pswdField = self.__exWaitS().until(
-                ec.presence_of_element_located(
-                    (By.XPATH, user["user-password-field"])
-                ),
-                message="timeout trying to find password field",
-            )
-            pswdField.send_keys(self.user_pswd)
-            
-            login_btn2 = self.__exWaitS().until(
-                ec.presence_of_element_located((By.XPATH, user["user-login-btn2"])),
-                message="timeout trying to find the login button on the login page",
-            )
-            
-            self._click(login_btn2, "Click the login button on the login page")
-            self._waiting(10, "Wait for newsfeed page to appear")
-            
-            self.post()
-                
+            acceptBtn.click()
         except Exception as e:
             print(e)
+            pass
+        try:
+            searchBtn = self.__exWaitS().until(
+                ec.presence_of_element_located((By.ID, "dsp-upper-search-btn")),
+                message="timeout trying to find offer button",
+            )
+            # self.driver.execute_script("arguments[0].click();", offerBtn)
+            searchBtn.click()
+        except Exception as e:
+            print(e)
+            pass
             
-    def categories_to_numbers(self, argument):
-        switcher = {
-            "Ask a neighbour": "1",
-            "Finds (For Sale & Free)": "2",
-            "Documents": "3",
-            "Safety": "4",
-            "Lost and Found": "5",
-            "General": "6",
-        }
+    def start(self, minimal_photo_count=0):
+        try:
+            item = self.__exWaitS().until(
+                ec.presence_of_element_located((By.CLASS_NAME, "cBox-body cBox-body--topResultitem dealerAd")),
+                message="timeout trying to find top result item",
+            )
+            imageNum = item.findElementByXpath("./a/div[2]/div[1]/div[1]//b")
+            if int(imageNum) >= minimal_photo_count:
+                item.findElementByXpath("./a")
+                link_info = item.getAttribute("href")
+                self.scraping(link_info)
+        except Exception as e:
+            print(e)
+            pass
+        try:
+            items = self.__exWaitS().until(
+                ec.presence_of_all_elements_located((By.ID, "cBox-body cBox-body--resultitem dealerAd")),
+                message="timeout trying to find items",
+            )
+            for item in items:
+                imageNum = item.findElementByXpath("./a/div[2]/div[1]/div[1]//b")
+                if int(imageNum) >= minimal_photo_count:
+                    item.findElementByXpath("./a")
+                    link_info = item.getAttribute("href")
+                    self.scraping(link_info)
+        except Exception as e:
+            print(e)
+            pass
+        
     
-        return switcher.get(argument, 1)
-    
-    def post(self):
-        postField = self.__exWaitS().until(
-            ec.presence_of_element_located((By.XPATH, home['post-field'])),
-            message="timeout trying to find post field button",
-        )
-        self._click(postField, "Click the post field button on the newsfeed page")
-
-        postCategoryBtn = self.__exWaitS().until(
-            ec.presence_of_element_located((By.XPATH, home['post-categorybtn'])),
-            message="timeout trying to find post category button",
-        )
-        self._click(postCategoryBtn, "Click the category button on the newsfeed page")
-        
-        categoryNumber = self.categories_to_numbers(self.post_category)
-        postCategory = self.__exWaitS().until(
-            ec.presence_of_element_located((By.XPATH, home['post-category'+categoryNumber])),
-            message="timeout trying to find post category",
-        )
-        self._click(postCategory, "Click the category on the newsfeed page")
-        
-        postSubject = self.__exWaitS().until(
-            ec.presence_of_element_located(
-                (By.XPATH, home["post-subject"])
-            ),
-            message="timeout trying to find subject ",
-        )
-        postSubject.send_keys(self.post_subject)
-
-        postMessage = self.__exWaitS().until(
-            ec.presence_of_element_located(
-                (By.XPATH, home["post-message"])
-            ),
-            message="timeout trying to find message textarea",
-        )
-        postMessage.send_keys(self.post_message)
-
-        postBtn = self.__exWaitS().until(
-            ec.presence_of_element_located(
-                (By.XPATH, home["post-btn"])
-            ),
-            message="timeout trying to find Post button",
-        )
-        
-        targetTime = datetime.strptime(self.date + " " + self.time, "%d/%m/%Y %I:%M%p")
-        sleepingTime = (targetTime - datetime.now()).total_seconds()
-        sleepingTime = sleepingTime if sleepingTime > 0 else 0
-        self._waiting(sleepingTime, "Wait until target time")
-        
-        self._click(postBtn, "Click the Post button on the newsfeed page")
-        self._waiting(5, "Wait for the new post to appear")
-        self.driver.quit()
-        
+    def scraping(self, link_url=""):
+        self.driver.find_element_by_tag_name('body').send_keys(Keys.COMMAND + 't')
+        self.driver.get(link_url)
+        time.sleep(100)
+        self.driver.find_element_by_tag_name('body').send_keys(Keys.COMMAND + 'w')
+            
 if __name__ == "__main__":
 
-    nextdoor = Nextdoor()
-    nextdoor.login()
+    suchenMobileDe = SuchenMobileDe()
+    suchenMobileDe.login()
+    time.sleep(15)
+    suchenMobileDe.start()
