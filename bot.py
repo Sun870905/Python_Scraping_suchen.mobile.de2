@@ -14,7 +14,7 @@ import pandas as pd
 import undetected_chromedriver.v2 as uc
 import os
 import urllib.request
-
+import requests
 class SuchenMobileDe():
 
     def __init__(self):
@@ -49,6 +49,11 @@ class SuchenMobileDe():
                 self.driver.switch_to.window(window)
                 self.driver.close()
                 self.driver.switch_to.window(self.main_window)
+    
+    def beauty(self, first="", second=""):
+        if len(first) < 30:
+            return first + ' ' * (30 - len(first)) + second
+        return first + ' ' + second
     
     def login(self, vehicle_type="cars", price_from=-1, price_to=-1, registration_from=-1, registration_to=-1, kilometer_from=-1, kilometer_to=-1, provider="any"):
         if vehicle_type == "cars":
@@ -178,7 +183,7 @@ class SuchenMobileDe():
             print(e)
             pass
             
-    def start(self, minimal_photo_count=0, directory_path=""):
+    def start(self, minimal_photo_count=0, directory_path="Results"):
         try:
             icon = self.__exWaitS().until(
                 ec.presence_of_element_located((By.XPATH, "//div[@id='save-search-tutorial']/span")),
@@ -198,7 +203,7 @@ class SuchenMobileDe():
                 image_count_item = imageNum[0]
                 if len(imageNum) > 1:
                     image_count_item = imageNum[1]
-                print(f"-------------> Top Image Count: {image_count_item.text}")
+                print(f"\n---------------> Top Image Count: {image_count_item.text}")
                 if int(image_count_item.text) >= minimal_photo_count:
                     topResult_link = topResult.find_element_by_xpath("./a")
                     link_info = topResult_link.get_attribute("href")
@@ -213,7 +218,7 @@ class SuchenMobileDe():
                 )
                 for item in items:
                     imageNum = item.find_element_by_xpath("./a/div/div[1]/div/div/span[2]/b")
-                    print(f"---------------> Image Couunt: {imageNum.text}")
+                    print(f"\n---------------> Image Count: {imageNum.text}")
                     if int(imageNum.text) >= minimal_photo_count:
                         item_link = item.find_element_by_xpath("./a")
                         link_info = item_link.get_attribute("href")
@@ -233,11 +238,20 @@ class SuchenMobileDe():
                 break
         print("---------------> End")
         
-    def scraping(self, link_url="", directory_path="/Results"):
+    def scraping(self, link_url="", directory_path="Results"):
         main_window= self.driver.current_window_handle
         self.driver.execute_script('window.open(arguments[0]);', link_url)
         time.sleep(5)
         self.driver.switch_to.window(self.driver.window_handles[1])
+        try:
+            acceptBtn = self.__exWaitS().until(
+                ec.presence_of_element_located((By.ID, "mde-consent-accept-btn")),
+                message="timeout trying to find accept button",
+            )
+            acceptBtn.click()
+        except Exception as e:
+            # print(e)
+            pass
         
         print("---------------> Scraping Start")
         title = self.__exWaitS().until(
@@ -245,38 +259,44 @@ class SuchenMobileDe():
             message="timeout trying to find title",
         ).text
         print("---------------> Title:\t", title)
+        print("---------------> Directory Path:", directory_path)
+        if "Results" in directory_path:
+            cwd = os.getcwd()
+            directory_path = os.path.join(cwd, directory_path)
+            print("--------------->", directory_path)
+        if os.path.exists(directory_path):
+            print("---------------> The above directory exists")
+            directory_path = os.path.join(directory_path, title)
+            if not os.path.isdir(directory_path):
+                print("--------------->", directory_path)
+                print("---------------> The above directory doesn't exist")
+                directory_path = directory_path.replace("*", "").replace(".", "").replace("/", " ")
+                os.mkdir(directory_path)
+                print("---------------> Creating this directory")
         
-        if os.path.exists(directory_path) and not os.path.exists(f"{directory_path}/{title}"):
-            os.mkdir(f"{directory_path}/{title}")
-            print("---------------> Directory Creation")
-        
-        image_xpath = "/html/body/div[6]/div/div[2]/div[3]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[2]/div[1]/div[1]//img"
-        images = self.__exWaitS().until(
-            ec.presence_of_all_elements_located((By.XPATH, image_xpath)),
-            message="timeout trying to find images",
+        image_wrapper = self.__exWaitS().until(
+            ec.presence_of_all_elements_located((By.XPATH, "//div[@class='slick-list draggable']")),
+            message="timeout trying to find image wrapper",
         )
-        image_array = []
-        for image in images:
-            if image.get_attribute('src') == None:
-                image_array.append(image.get_attribute('data-lazy'))
-            else:
-                image_array.append(image.get_attribute('src'))
-        print("----------------> Image Links")
+        images = image_wrapper[0].find_elements_by_xpath(".//img")
+        image_array = [image.get_attribute('src') for image in images]
+        print("---------------> Image Links")
         for idx, answer_src in enumerate(image_array):
-            # with open(f'Results/{title}/{idx}.png', 'wb') as f:
-            #     f.write(answer_src[22:])
-            urllib.urlretrieve(answer_src, f'{directory_path}/{title}/{idx}.png')
-            print(f"----------------> {idx} \t {answer_src}")
+            response = requests.get(answer_src)
+            print(f"---------------> {idx+1}\t{answer_src}")
+            if response.status_code == 200:
+                with open(f"{directory_path}/{idx+1}.png","wb") as file:
+                    file.write(response.content)
 
         time.sleep(2)
-
-        results = "Title:\t", title
+        
+        results = self.beauty("Title:", title)+'\n'
         price = self.__exWaitS().until(
             ec.presence_of_element_located((By.XPATH, "//div[@id='td-box']/div[1]/div[2]/span[1]")),
             message="timeout trying to find price",
         ).text
-        print(f"----------------> Price:\t", price)
-        results = f"{results}\nPrice:\t{price}"
+        print(f"---------------> " + self.beauty("Price", price))
+        results += self.beauty("Price", price)+'\n'
         items = self.__exWaitS().until(
             ec.presence_of_all_elements_located((By.XPATH, "//div[@id='td-box']/div")),
             message="timeout trying to find the whole content",
@@ -285,10 +305,11 @@ class SuchenMobileDe():
             if idx > 0:
                 item_title = item.find_element_by_xpath(".//strong").text
                 item_content = item.find_element_by_xpath("./div[2]").text
-                results = f"{results}\n{item_title}\t{item_content}"
-                print(f"----------------> {item_title}\t{item_content}")
-        f = open(f"{directory_path}/{title}/results.txt","w+")
-        f.write(results)
+                results += self.beauty(item_title, item_content)+'\n'
+                print(f"---------------> " + self.beauty(item_title, item_content))
+        with open(f"{directory_path}/results.txt","wb") as file:
+            file.write(results.encode('utf-8'))
+            
         time.sleep(3)
         print("---------------> Scraping End")
         self.driver.close()
