@@ -1,7 +1,5 @@
 from datetime import datetime
 from colorama import init, Fore
-
-
 class Log:
     def __init__(self, log=True, logfile="error-logs.txt"):
         init(autoreset=True)
