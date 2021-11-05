@@ -1,7 +1,7 @@
 from datetime import datetime
 from colorama import init, Fore
 class Log:
-    def __init__(self, log=True, logfile="error-logs.txt"):
+    def __init__(self, log=True, logfile="error-logs.html"):
         init(autoreset=True)
         self.log = log
         self.logfile = logfile
@@ -30,12 +30,18 @@ class Log:
 
     def write_log(self, badge="bot", msg=" "):
         if badge.upper() == "BOT":
-            print(f"[ {self.get_time()} ] [{self.__get_bot_badge()}] {msg}")
+            bot_log = f"[ {self.get_time()} ]"
+            print(f"{bot_log} [{self.__get_bot_badge()}] {msg}")
+            with open(self.logfile, "a") as log:
+                log.write(f"<p>{bot_log} [  BOT  ] {msg}</p>")
         elif badge.upper() == "BROWSER":
-            print(f"[ {self.get_time()} ] [{self.__get_browser_badge()}] {msg}")
+            browser_log = f"[ {self.get_time()} ]"
+            print(f"{browser_log} [{self.__get_browser_badge()}] {msg}")
+            with open(self.logfile, "a") as log:
+                log.write(f"<p>{browser_log} [  BROWSER  ] {msg}</p>")
 
     def error_log(self, error_msg):
         if self.log:
             with open(self.logfile, "a") as log:
                 error_msg_line = f'[ {self.get_time()} ] [  ERROR  ] {str(error_msg)}'
-                log.write(error_msg_line)
+                log.write(f"<p>{error_msg_line}</p>")
