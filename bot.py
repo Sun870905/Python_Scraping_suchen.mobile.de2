@@ -1,8 +1,9 @@
-from selenium.webdriver import Chrome
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.chrome.options import Options
+# from seleniumrequests import Chrome
 from log import Log
 from xpath import *
 import time
@@ -14,10 +15,14 @@ class SuchenMobileDe():
     def __init__(self):
         self.log = Log()
         self.site_url = "https://suchen.mobile.de/fahrzeuge/search.html?dam=0"
+        self.s = requests.Session()
         chrome_options = Options()
         chrome_options.add_argument("--start-maximized")
         chrome_options.add_extension("adblock_extension_4_33_0_0.crx")
-        self.driver = Chrome(executable_path='chromedriver93.0.4577.15_win32.exe', options=chrome_options)
+        self.driver = webdriver.Chrome(executable_path='chromedriver95.0.4638.69.exe', options=chrome_options)
+        self.driver.execute_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+        )
         self.main_window = self.driver.current_window_handle
         self.ad_num = 0
         
@@ -96,7 +101,7 @@ class SuchenMobileDe():
             registration_to, 
             kilometer_from, 
             kilometer_to, 
-            minimal_photo_count,
+            minimal_photo_count, 
             provider, 
             directory_path,
             location,
@@ -117,7 +122,6 @@ class SuchenMobileDe():
         time.sleep(waitingTime)
         
     def __switch_tab(self):
-        # time.sleep(2)
         visible_windows = self.driver.window_handles
 
         for window in visible_windows:
@@ -138,19 +142,30 @@ class SuchenMobileDe():
         elif vehicle_type == "motorcycles":
             self.site_url = "https://suchen.mobile.de/fahrzeuge/search.html?vc=Motorbike"
         self.driver.get(self.site_url)
-        # time.sleep(5)
+        time.sleep(5)
         self.__switch_tab()
         try:
             acceptBtn = self.__exWaitS().until(
                 ec.presence_of_element_located((By.ID, "mde-consent-accept-btn")),
                 message="timeout trying to find accept button",
             )
-            self._click(acceptBtn, "accept button click")
+            self._click(acceptBtn, "Clicking accept button")
+        except Exception as e:
+            print(e)
+            pass
+        try:
+            time.sleep(2)
+            acceptBtn = self.__exWaitS().until(
+                ec.presence_of_element_located((By.XPATH, "//div[@id='mde-consent-modal-container']/div/div[2]/button")),
+                message="timeout trying to find modal container button",
+            )
+            self._click(acceptBtn, "Clicking modal container button")
         except Exception as e:
             print(e)
             pass
         if price_from != -1:
             try:
+                time.sleep(2)
                 minPrice = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "minPrice")),
                     message="timeout trying to find min price input",
@@ -162,6 +177,7 @@ class SuchenMobileDe():
                 pass
         if price_to != -1:
             try:
+                time.sleep(2)
                 maxPrice = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "maxPrice")),
                     message="timeout trying to find max price input",
@@ -173,6 +189,7 @@ class SuchenMobileDe():
                 pass
         if registration_from != -1:
             try:
+                time.sleep(2)
                 minFirstRegistrationDate = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "minFirstRegistrationDate")),
                     message="timeout trying to find min registration input",
@@ -184,6 +201,7 @@ class SuchenMobileDe():
                 pass
         if registration_to != -1:
             try:
+                time.sleep(2)
                 maxFirstRegistrationDate = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "maxFirstRegistrationDate")),
                     message="timeout trying to find max registration input",
@@ -195,6 +213,7 @@ class SuchenMobileDe():
                 pass
         if kilometer_from != -1:
             try:
+                time.sleep(2)
                 minMileage = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "minMileage")),
                     message="timeout trying to find min kilometer input",
@@ -206,6 +225,7 @@ class SuchenMobileDe():
                 pass
         if kilometer_to != -1:
             try:
+                time.sleep(2)
                 maxMileage = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "maxMileage")),
                     message="timeout trying to find max kilometer input",
@@ -218,6 +238,7 @@ class SuchenMobileDe():
         self.log.write_log("bot", "Vehicle type: "+provider)
         if provider == "any":
             try:
+                time.sleep(2)
                 anyRadio = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "adLimitation--ds")),
                     message="timeout trying to find any radio",
@@ -228,6 +249,7 @@ class SuchenMobileDe():
                 pass
         elif provider == "Private provider":
             try:
+                time.sleep(2)
                 private_provider_radio = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "adLimitation-ONLY_FSBO_ADS-ds")),
                     message="timeout trying to find private provider radio",
@@ -238,6 +260,7 @@ class SuchenMobileDe():
                 pass
         elif provider == "Dealers":
             try:
+                time.sleep(2)
                 dealerRadio = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "adLimitation-ONLY_DEALER_ADS-ds")),
                     message="timeout trying to find dealer radio",
@@ -248,6 +271,7 @@ class SuchenMobileDe():
                 pass
         elif provider == "Company vehicles":
             try:
+                time.sleep(2)
                 company_vehicle_radio = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "adLimitation-ONLY_COMMERCIAL_FSBO_ADS-ds")),
                     message="timeout trying to find company vehicle radio",
@@ -260,6 +284,7 @@ class SuchenMobileDe():
         if location != "Any":
             if location == "Germany" or location == "germany" or location == "Deutschland":
                 try:
+                    time.sleep(2)
                     countryBtn = self.__exWaitS().until(
                         ec.presence_of_element_located((By.ID, "ambit-search-country")),
                         message="timeout trying to find country button",
@@ -271,6 +296,7 @@ class SuchenMobileDe():
                     pass
             else:
                 try:
+                    time.sleep(2)
                     countryBtn = self.__exWaitS().until(
                         ec.presence_of_element_located((By.ID, "ambit-search-country")),
                         message="timeout trying to find country button",
@@ -284,6 +310,7 @@ class SuchenMobileDe():
                     print(e)
                     pass
         try:
+            time.sleep(3)
             searchBtn = self.__exWaitS().until(
                 ec.presence_of_element_located((By.ID, "dsp-upper-search-btn")),
                 message="timeout trying to find offer button",
@@ -323,7 +350,6 @@ class SuchenMobileDe():
                         image_count_item = imageNum[0]
                         if len(imageNum) > 1:
                             image_count_item = imageNum[1]
-                        # print(f"\n---------------> Top Image Count: {image_count_item.text}")
                         self.log.write_log("bot", f"Top image Count: {image_count_item.text}")
                         self.log.write_log("bot", f"Minimal image Count: {minimal_photo_count}")
                         if int(image_count_item.text) >= minimal_photo_count:
@@ -333,7 +359,6 @@ class SuchenMobileDe():
                             self.scraping(link_info, directory_path)
                         
             except Exception as e:
-                # print(e)
                 self.log.write_log("bot", "Top Ad scraping exception")
                 pass
             try:
@@ -355,48 +380,34 @@ class SuchenMobileDe():
                     except:
                         pass
             except Exception as e:
-                # print(e)
                 self.log.write_log("bot", "Normal Ad scraping exception")
                 pass
-            # time.sleep(1000)
             try:
                 page_forward_btn = self.__exWaitS().until(
                     ec.presence_of_element_located((By.ID, "page-forward")),
                     message="timeout trying to find page forward button",
                 )
                 self._click(page_forward_btn, f"{page_num} page forward button click")
-                # time.sleep(2)
             except Exception as e:
-                # print("---------------> Page Forward Button doesn't exist")
                 self.log.write_log("bot", "Page Forward Button doesn't exist")
                 break
-        # print("---------------> End")
         print()
         self.log.write_log("bot", f"Scraping end")
         
     def scraping(self, link_url="", directory_path="Results"):
         self.ad_num += 1
         self.log.write_log("bot", f"{self.ad_num} Ad scraping start")
-        # print(link_url)
+        
         # try:
-        #     response = requests.get(link_url)
-        #     print(response.text)
-        # except:
-        #     print("response exception")
-        #     pass
-        # print()
-        # try:
-        #     response = requests.post(link_url)
+        #     response = self.s.get(link_url)
         #     print(response.text)
         # except:
         #     print("response exception")
         #     pass
         # time.sleep(1000)
-        # if response.status_code == 200:
-        #     print(response.content)
+
         main_window= self.driver.current_window_handle
         self.driver.execute_script('window.open(arguments[0]);', link_url)
-        # time.sleep(2)
         self.driver.switch_to.window(self.driver.window_handles[1])
         try:
             acceptBtn = self.__exWaitS().until(
@@ -405,35 +416,23 @@ class SuchenMobileDe():
             )
             self._click(acceptBtn, "Accept button click")
         except Exception as e:
-            # print(e)
             self.log.write_log("bot", "Accept button clickng exception")
             pass
         
-        # print("---------------> Scraping Start")
         title = self.__exWaitS().until(
             ec.presence_of_element_located((By.ID, "ad-title")),
             message="timeout trying to find title",
         ).text
-        # print("---------------> Title:\t", title)
-        # print("---------------> Directory Path:", directory_path)
         self.log.write_log("bot", "Title scraping: "+title)
-        if directory_path == "Results":
+        if "Results" in directory_path:
             cwd = os.getcwd()
             directory_path = os.path.join(cwd, directory_path)
-            # print("--------------->", directory_path)
         if os.path.exists(directory_path):
-            # print("---------------> The above directory exists")
             title1 = title.replace("*", "").replace("/", "").replace("\\", "").replace(":", "").replace("|", "").replace("?", "").replace("<", "").replace(">", "").replace("\"", "").replace("+", "").replace("-", "").replace(".", "").replace(",", "").replace("-", "")
             directory_path = os.path.join(directory_path, title1).strip()
-            if os.path.isdir(directory_path):
-                directory_path += "1"
             if not os.path.isdir(directory_path):
-                # print("--------------->", directory_path)
-                # print("---------------> The above directory doesn't exist")
                 os.mkdir(directory_path)
-                # print("---------------> Creating this directory")
                 self.log.write_log("bot", "Directory creating: "+directory_path)
-        # print("---------------> Image Links")
         try:
             image_wrappers = self.__exWaitS().until(
                 ec.presence_of_all_elements_located((By.XPATH, "//div[@id='fullscreen-overlay-image-gallery-container']/div/div[2]/div/div[2]/div")),
@@ -444,18 +443,14 @@ class SuchenMobileDe():
                 if image_wrapper.get_attribute("id").startswith("gallery-img"):
                     image_src = image_wrapper.find_element_by_xpath("./img").get_attribute("data-lazy")
                     index = index + 1
-                    # print(f"---------------> {index}\thttps:+{image_src}")
                     self.log.write_log("bot", f"{index} image scraping: {image_src}")
                     response = requests.get("https:"+image_src)
                     if response.status_code == 200:
                         with open(f"{directory_path}\\{index}.jpg","wb") as file:
                             file.write(response.content)
         except Exception as e:
-            # print("---------------> image extraction")
-            # print(e)
             self.log.write_log("bot", "Images scraping exception")
             pass
-        # time.sleep(2)
         results = '<table>'
         results += '<tr><td>Title</td><td>'+title+'</td></tr>'
         try:
@@ -464,10 +459,8 @@ class SuchenMobileDe():
                 message="timeout trying to find address",
             ).text
             results += f'<tr><td>Address</td><td>{address}</td></tr>'
-            # print(f"---------------> " + self.beauty("Address", address))
             self.log.write_log("bot", f"Address scraping: {address}")
         except Exception as e:
-            # print("---------------> Address Extracting")
             self.log.write_log("bot", "Address scraping exception")
             pass
         try:
@@ -475,11 +468,9 @@ class SuchenMobileDe():
                 ec.presence_of_element_located((By.XPATH, "//div[@id='td-box']/div[1]/div[2]/span[1]")),
                 message="timeout trying to find price",
             ).text
-            # print(f"---------------> " + self.beauty("Price", price))
             self.log.write_log("bot", f"Price scraping: {price}")
             results += '<tr><td>Price</td><td>'+price+'</td></tr>'
         except Exception as e:
-            # print("---------------> Price Extracting")
             self.log.write_log("bot", "Price scraping exception")
             pass
         try:
@@ -492,10 +483,8 @@ class SuchenMobileDe():
                     item_title = item.find_element_by_xpath(".//strong").text
                     item_content = item.find_element_by_xpath("./div[2]").text
                     results += '<tr><td>'+item_title+'</td><td>'+item_content+'</td></tr>'
-                    # print(f"---------------> " + self.beauty(item_title, item_content))
                     self.log.write_log("bot", f"{item_title} scraping: {item_content}")
         except Exception as e:
-            # print("---------------> Information Extracting")
             self.log.write_log("bot", "Each Item scraping exception")
             pass
         try:
@@ -504,19 +493,14 @@ class SuchenMobileDe():
                 message="timeout trying to find description",
             )
             results += '<tr></tr><tr><td colspan="2"><h3>Description</h3></td></tr>'
-            # print("---------------> Description Extraction")
             results += f'<tr><td colspan="2">{description.text}</td></tr>'
-            # print(f"---------------> {description.text}")
             self.log.write_log("bot", f"description scraping")
         except Exception as e:
-            # print("---------------> Description Exception")
             self.log.write_log("bot", "Description scraping exception")
             pass
         results += '</table>'
         with open(f"{directory_path}\\results.html","wb") as file:
             file.write(results.encode('utf-8'))
-        # time.sleep(3)
-        # print("---------------> Scraping End")
         self.driver.close()
         self.driver.switch_to.window(main_window)
 
@@ -525,4 +509,3 @@ if __name__ == "__main__":
     suchenMobileDe.login(suchenMobileDe.vehicle, suchenMobileDe.price_from, suchenMobileDe.price_to, suchenMobileDe.registration_from, suchenMobileDe.registration_to, suchenMobileDe.kilometer_from, suchenMobileDe.kilometer_to, suchenMobileDe.provider, suchenMobileDe.location)
     time.sleep(3)
     suchenMobileDe.start(suchenMobileDe.minimal_photo_count, suchenMobileDe.directory_path)
-
